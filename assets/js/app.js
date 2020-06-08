@@ -30,53 +30,70 @@ d3.csv("assets/data/data.csv").then(function(healthData) {
     console.log(healthData);
 
     //Extract Poverty and Obesity data from full dataset. 
-    //I'll be using these two variables for my chart
     //+ inside of map converts string values to int
     var poverty = healthData.map(data => +data.poverty);
     var obesity = healthData.map(data => +data.obesity);
+    var abbrv = healthData.map(data => data.abbr);
 
     //Print both variables to the Console
     console.log("Poverty", poverty);
     console.log("Obesity", obesity);
+    console.log("Abbreviations", abbrv);
 
     //Create X and Y scale functions
     var xAxis = d3.scaleLinear()
-                    .range([chartHeight,0])
-                    .domain([0, d3.max(healthData, data => data.poverty)]);
+                    .range([0,chartWidth])
+                    .domain([d3.min(poverty) - 5, d3.max(poverty)]);
     var yAxis = d3.scaleLinear()
-                    .range([chartWidth,0])
-                    .domain([0, d3.max(healthData, data => data.obesity)]);
+                    .range([chartHeight,0])
+                    .domain([d3.min(obesity) - 5, d3.max(obesity)]);
 
     //Create axis functions
     var bottomAxis = d3.axisBottom(xAxis);
     var leftAxis = d3.axisLeft(yAxis);
 
-    //Create the Scatter Plot
-    var drawLine = d3
-                    .line()
-                    .x(data => xAxis(data.poverty))
-                    .y(data => yAxis(data.obesity));
 
-    //********STOPPING HERE*********/
+    chartGroup.append("g")
+        .attr("transform", `translate(0, ${chartHeight})`)
+        .call(bottomAxis);
 
-      // Append an SVG path and plot its points using the line function
-  chartGroup.append("path")
-  // The drawLine function returns the instructions for creating the line for milesData
-  .attr("d", drawLine(healthData))
-  .classed("line", true);
+    chartGroup.append("g")
+        .call(leftAxis);
 
-// Append an SVG group element to the SVG area, create the left axis inside of it
-chartGroup.append("g")
-  .classed("axis", true)
-  .call(leftAxis);
+    //Create circles and lables for chart
+    var circles = chartGroup.selectAll("circle")
+                .data(healthData)
+                .enter()
+                .append("circle")
+                .attr("cx", data => xAxis(data.poverty))
+                .attr("cy", data => yAxis(data.obesity))
+                .attr("r", "15")
+                .attr("opacity", "0.95")
+                .attr("class", "stateCircle");
 
-// Append an SVG group element to the SVG area, create the bottom axis inside of it
-// Translate the bottom axis to the bottom of the page
-chartGroup.append("g")
-  .classed("axis", true)
-  .attr("transform", "translate(0, " + chartHeight + ")")
-  .call(bottomAxis);
-}).catch(function(error) {
-console.log(error);
+     var circlesAbbrv = chartGroup.selectAll("circle").select('text')
+                .data(healthData)
+                .enter()
+                .append("text")
+                .attr("x", data => xAxis(data.poverty))
+                .attr("y", data => yAxis(data.obesity))
+                .attr("dx", 5)
+                .attr("class", "stateText")
+                .attr("text-anchor", "start")
+                .text(data => data.abbr);
+
+// Create axes labels
+chartGroup.append("text")
+.attr("transform", "rotate(-90)")
+.attr("y", 0 - margin.left)
+.attr("x", 0 - (chartHeight / 2))
+.attr("dy", "1em")
+.classed("axis-text", true)
+.text("Obesity %");
+
+chartGroup.append("text")
+.attr("transform", `translate(${chartWidth/ 2}, ${chartHeight + margin.top -20})`)
+.classed("axis-text", true)
+.text("Poverty %");
 
 });
